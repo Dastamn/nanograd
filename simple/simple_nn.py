@@ -2,6 +2,8 @@ import random
 from abc import ABC, abstractmethod
 from typing import List, Literal
 
+import numpy as np
+
 from scalar import Scalar
 
 
@@ -19,11 +21,11 @@ class ScalarNeuron(SimpleModule):
         self.w = [Scalar(random.uniform(low, high)) for _ in range(nin)]
         self.b = Scalar(random.uniform(low, high))
 
-    def __call__(self, x, act: Literal['tanh', 'sigmoid', 'relu'] = 'tanh'):
-        # assert isinstance(x, list)
-        # if not len(self.w) == len(x):
-        #     raise ValueError(
-        #         f'Input size mismatch, expected: `{len(self.w)}` got `{len(x)}`.')
+    def __call__(self, x: List[Scalar], act: Literal['tanh', 'sigmoid', 'relu'] = 'tanh'):
+        assert isinstance(x, (list, np.ndarray))
+        if not len(self.w) == len(x):
+            raise ValueError(
+                f'Input size mismatch, expected: ({len(self.w)}) got ({len(x)}).')
         out = sum((wi*xi for wi, xi in zip(self.w, x)), self.b)
         if act == 'tanh':
             out = out.tanh()
@@ -44,7 +46,7 @@ class ScalarLayer(SimpleModule):
     def __init__(self, nin: int, nout: int):
         self.neurons = [ScalarNeuron(nin) for _ in range(nout)]
 
-    def __call__(self, x):
+    def __call__(self, x: List[Scalar]):
         outs = [n(x) for n in self.neurons]
         return outs
 
@@ -58,7 +60,7 @@ class ScalarMLP(SimpleModule):
         self.layers = [ScalarLayer(*pair)
                        for pair in zip([nin] + nouts, nouts)]
 
-    def __call__(self, x):
+    def __call__(self, x: List[Scalar]):
         for layer in self.layers:
             x = layer(x)
         return x
